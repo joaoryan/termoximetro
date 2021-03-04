@@ -1,0 +1,173 @@
+#include "Servo.h"
+#include <LiquidCrystal.h> //Realiza a inclusão da biblioteca do Display LCD 16x2 
+#define POT! A1
+#define POT A0
+#define BT 7
+#define LED1 8
+#define LED2 9
+
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2); //Configura os pinos que serão utilizados
+float leitura1;
+int botao;
+float temp;
+float oxig;
+float distancia;
+float volt;
+float leitu;
+Servo servomotor;
+int servo ;
+int ser;
+
+void info();
+void leitura();
+void dev();
+void setup()
+{
+	lcd.begin(16, 2); //Inicializa o Display LCD 16x2
+	pinMode(LED2, OUTPUT);
+	pinMode(LED1, OUTPUT);
+	pinMode(A1, INPUT);
+	pinMode(A0, OUTPUT);
+	servomotor.attach(A3);
+	Serial.begin(9600);
+}
+
+void loop()
+{
+
+	dev();
+	Serial.println("");
+	info();
+	delay(1000);
+	Serial.println("");
+
+}
+
+void info()
+{
+	leitu = analogRead(A1);
+	volt = leitu * (5.0 / 1023);
+	temp = (volt - 0.5) * 100;
+
+	leitura1 = analogRead(A2);
+	oxig = (100 * leitura1) / 1023;
+
+   if (temp <= 0.0)
+	{
+
+		digitalWrite(LED2, LOW);
+		digitalWrite(LED1, LOW);
+		lcd.setCursor(0, 0);
+        temp=0;
+		lcd.print(temp);
+		lcd.print(" C");
+		lcd.print("      ");
+
+	}
+
+	else if (temp < 37.50)
+	{
+		digitalWrite(LED1, LOW);
+		digitalWrite(LED2, LOW);
+
+		lcd.setCursor(0, 0);
+		lcd.print(temp);
+		lcd.print(" C");
+		lcd.print("      ");
+
+
+	}
+	else if (temp >= 37.50)
+	{
+
+		digitalWrite(LED2, HIGH);
+		digitalWrite(LED1, LOW);
+		lcd.setCursor(0, 0);
+		lcd.print(temp);
+		lcd.print(" C");
+		lcd.print("      ");
+
+	}
+   
+
+	if (oxig >= 90)
+	{
+		digitalWrite(LED1, LOW);
+		digitalWrite(LED2, LOW);
+		lcd.setCursor(0, 1);
+		lcd.print("SpO2%");
+		lcd.setCursor(6, 1);
+		lcd.print(oxig);
+		lcd.print("      ");
+
+	}
+	else if (oxig < 90)
+	{
+
+		digitalWrite(LED1, HIGH);
+		digitalWrite(LED2, LOW);
+		lcd.setCursor(0, 1);
+		lcd.print("SpO2%");
+		lcd.setCursor(6, 1);
+		lcd.print(oxig);
+		lcd.print("      ");
+
+	}
+	Serial.print("Temperatura: ");
+	Serial.print(temp);
+	Serial.println(" C");
+	Serial.print("Oxigenio (SpO2): ");
+	Serial.print(oxig);
+	Serial.println("%");
+
+	leitura();
+	distancia = distancia / 2;
+	distancia = distancia * 0.034029;
+	distancia = 210 - distancia;
+	if(distancia <= 50)
+		distancia = 50;
+	else if (distancia >= 200)
+		distancia = 200;
+	else if ( distancia > 50 && distancia < 200)
+		distancia = distancia;
+
+	servo = map(distancia, 50, 200, 50, 150);
+	servomotor.write(servo);
+
+
+	if (distancia < 100)
+	{
+
+		Serial.print("Altura: ");
+		Serial.print(distancia);
+		Serial.println(" centimetro(s)");
+	}
+	// converte a altura de centimetros para metros
+	else if (distancia >= 100 )
+	{
+
+		distancia = distancia / 100;
+		Serial.print("Altura: ");
+		Serial.print(distancia);
+		Serial.println(" metro(s)");
+	}
+}
+
+void dev()
+{
+	Serial.println("TERMOXIMETRO");
+	Serial.println("Desenvolvedores:");
+	Serial.println("Joao Ryan dos Santos");
+	Serial.println("Jonathan Stefan Covelo de Carvalho ");
+	Serial.println("Rafael Felipe Rodrigues Moreira");
+}
+
+void leitura()
+{
+	pinMode(A0, OUTPUT);
+	digitalWrite(A0, HIGH);
+	delayMicroseconds(5);
+	digitalWrite(A0, LOW);
+	pinMode (A0, INPUT);
+	distancia = pulseIn(A0, HIGH);
+}
